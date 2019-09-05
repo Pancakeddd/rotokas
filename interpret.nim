@@ -40,3 +40,7 @@ proc evaluate_next(T: var TreeDescender, node: Node) =
     tree_num(T, cast[Number](node))
   elif node of Sexpr:
     tree_s_expr(T, cast[Sexpr](node))
+
+proc evaluate_all*(T: var TreeDescender, nodes: seq[Node]) =
+  for node in nodes:
+    evaluate_next(T, node)

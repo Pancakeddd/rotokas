@@ -7,12 +7,12 @@ proc load_roto_file(filename: string) =
   let toks = get_next_march(l)
 
   var p = Parser(parseobj: toks, tokpointer: 0)
-  let nodes = parse_next(p)
-  echo fmt_node(nodes)
+  let nodes = parse_all(p)
+  echo fmt_nodes(nodes)
 
   var env = new_environment()
   load_stdlib(env)
   var td = TreeDescender(env: env)
-  tree_s_expr(td, cast[Sexpr](nodes))
+  evaluate_all(td, nodes)
 
 load_roto_file("test.lisp")

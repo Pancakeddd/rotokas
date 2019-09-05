@@ -64,6 +64,16 @@ proc parse_next*(P: var Parser): Node =
 
   return Node(name: "Null")
 
+proc parse_all*(P: var Parser): seq[Node] =
+  var ast: seq[Node]
+  while true:
+    let x = parse_next(P)
+    if x.name != "Null" and x.name != "Eot":
+      ast.add(x)
+    else:
+      break
+  return ast
+
 proc fmt_node*(node: Node): string =
   var str: string
   case node.name:
