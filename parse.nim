@@ -12,10 +12,10 @@ proc in_range(P: Parser): bool =
     return true
   return false
 
-proc next(P: var Parser) =
+proc next(P: var Parser) {.inline.} =
   P.tokpointer += 1
 
-proc peek(P: Parser): Token = P.parseobj[P.tokpointer]
+proc peek(P: Parser): Token {.inline.} = P.parseobj[P.tokpointer]
 
 proc is_value(T: Token): bool =
   case T.name:
@@ -35,7 +35,6 @@ proc s_expression(P: var Parser): Sexpr =
   var exp = parse_next(P)
   while in_range(P):
     exprs.add(exp)
-    echo peek(P)
     if peek(P).value == ")":
       break
     else:
