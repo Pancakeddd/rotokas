@@ -4,10 +4,17 @@ type
   TreeDescender* = object
     env*: ref Environment
 
-proc pop_number*(E: var Environment): ObjectNumber =
-  let p = pop_env(E)
+proc get_number*(E: var ref Environment, i: int): ObjectNumber =
+  let p = getfrom_env(E, i)
   if p != nil and p of ObjectNumber:
     return cast[ObjectNumber](p)
+  else:
+    return nil
+
+proc get_string*(E: var ref Environment, i: int): ObjectString =
+  let p = getfrom_env(E, i)
+  if p != nil and p of ObjectString:
+    return cast[ObjectString](p)
   else:
     return nil
 
@@ -15,7 +22,18 @@ proc evaluate_next(T: var TreeDescender, node: Node)
 
 proc tree_num*(T: var TreeDescender, num: Number) = 
   let num = new_numberobj(num.value)
-  push_env(T.env[], num)
+  push_env(T.env, num)
+
+proc tree_str*(T: var TreeDescender, str: String) = 
+  let str = new_stringobj(str.value)
+  push_env(T.env, str)
+
+proc tree_sym*(T: var TreeDescender, sym: Symbol) =
+  if exists_in_env(T.env, sym.value):
+    let sym = get_in_env(T.env, sym.value)
+    push_env(T.env, sym)
+  else:
+    throw_runtime_error(fmt"Expected an existant value for symbol '{sym.value}'")
 
 proc tree_s_expr*(T: var TreeDescender, expr: Sexpr) =
   if len(expr.exprs) > 0:
@@ -25,10 +43,12 @@ proc tree_s_expr*(T: var TreeDescender, expr: Sexpr) =
       if exists_in_env(T.env, first_sym.value):
         var fun = get_in_env(T.env, first_sym.value)
         if fun of ObjectFunction:
+          var fun_td = TreeDescender(env: new_environment(T.env))
           for arg in expr.exprs[1..^1]:
-            evaluate_next(T, arg)
+            evaluate_next(fun_td, arg)
           var ffun = cast[ObjectFunction](fun)
-          ffun.fptr(T.env[])
+          ffun.fptr(fun_td.env)
+          transfer_env_stack(fun_td.env, T.env)
         else:
           throw_runtime_error(fmt"Expected '{first_sym.value}' to be of function type")
       else:
@@ -38,8 +58,13 @@ proc tree_s_expr*(T: var TreeDescender, expr: Sexpr) =
 proc evaluate_next(T: var TreeDescender, node: Node) =
   if node of Number:
     tree_num(T, cast[Number](node))
+  elif node of String:
+    tree_str(T, cast[String](node))
   elif node of Sexpr:
     tree_s_expr(T, cast[Sexpr](node))
+  elif node of Symbol:
+    tree_sym(T, cast[Symbol](node))
+    
 
 proc evaluate_all*(T: var TreeDescender, nodes: seq[Node]) =
   for node in nodes:

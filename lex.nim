@@ -30,7 +30,7 @@ proc is_paren(c: char): bool =
   return false
 
 proc is_whitespace(c: char): bool =
-  if c == ' ' or c == '\t' or c == '\n':
+  if c == ' ' or c == '\t' or c == '\n' or c.int == 13:
     return true
   return false
 
@@ -42,9 +42,20 @@ proc get_number(L: var Lexer): Token =
     next(L)
   return Token(name: "Number", value: str, pos: startvar)
 
+proc get_string(L: var Lexer): Token =
+  let startvar = L.strpointer
+  var str: string
+  while in_range(L) and peek(L) != '"':
+    str.add(peek(L))
+    next(L)
+  next(L)
+  
+  return Token(name: "String", value: str, pos: startvar)
+
 proc get_function_token(L: var Lexer): Token =
   let startvar = L.strpointer
   var str: string
+  
   while in_range(L) and not is_whitespace(peek(L)) and not is_paren(peek(L)):
     str.add(peek(L))
     next(L)
@@ -63,6 +74,10 @@ proc get_next*(L: var Lexer): Token =
 
   if isDigit(p):
     return get_number(L)
+
+  if p == '"':
+    next(L)
+    return get_string(L)
 
   if is_paren(p):
     let p = Token(name: "Paren", value: $p, pos: L.strpointer)

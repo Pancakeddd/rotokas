@@ -1,4 +1,4 @@
-import tables
+import tables, sequtils
 
 type
   ObjectType* = ref object of RootObj
@@ -42,9 +42,30 @@ proc get_in_env*(E: var ref Environment, s: string): ObjectType =
   else:
     return nil
 
-proc push_env*(E: var Environment, obj: ObjectType) = E.stack.add(obj)
-proc pop_env*(E: var Environment): ObjectType =
+proc push_env*(E: var ref Environment, obj: ObjectType) =
+  E.stack.add(obj)
+proc pop_env*(E: var ref Environment): ObjectType =
   if len(E.stack) > 0:
     return E.stack.pop()
   else:
     return nil
+proc peek_env*(E: var ref Environment): ObjectType =
+  if len(E.stack) > 0:
+    return E.stack[^1]
+  else:
+    return nil
+proc getfrom_env*(E: var ref Environment, i: int): ObjectType =
+  if i <= len(E.stack) and i > 0:
+    return E.stack[^i]
+  else:
+    return nil
+
+proc clear_env*(E: var ref Environment, i: int) =
+  E.stack.delete(len(E.stack)-i, len(E.stack))
+
+proc clear_env*(E: var ref Environment) =
+  E.stack.delete(0, len(E.stack))
+
+proc transfer_env_stack*(E1: var ref Environment, E2: var ref Environment) =
+  for obj in E1.stack:
+    push_env(E2, obj)

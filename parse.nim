@@ -19,7 +19,7 @@ proc peek(P: Parser): Token {.inline.} = P.parseobj[P.tokpointer]
 
 proc is_value(T: Token): bool =
   case T.name:
-    of "Number", "Symbol":
+    of "Number", "Symbol", "String":
       return true
     else:
       return false
@@ -29,6 +29,9 @@ proc symbol(P: var Parser): Symbol =
 
 proc number(P: var Parser): Number =
   return Number(name: "Number", value: parseFloat(peek(P).value))
+
+proc str(P: var Parser): String =
+  return String(name: "String", value: peek(P).value)
 
 proc s_expression(P: var Parser): Sexpr =
   var exprs: seq[Node]
@@ -54,6 +57,11 @@ proc parse_next*(P: var Parser): Node =
 
   if p.name == "Symbol":
     let sym = symbol(P)
+    next(P)
+    return sym
+
+  if p.name == "String":
+    let sym = str(P)
     next(P)
     return sym
 
@@ -86,6 +94,8 @@ proc fmt_node*(node: Node): string =
       str.add Symbol(node).value
     of "Number":
       str.add $Number(node).value
+    of "String":
+      str.add String(node).value
     else:
       str.add "!UNKNOWN!"
   str.add " "
