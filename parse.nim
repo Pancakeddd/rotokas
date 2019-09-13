@@ -1,9 +1,13 @@
-import lex, node, strformat, strutils
+import lex, node, strformat, strutils, macros, tables
 
 type
   Parser* = object
     parseobj*: seq[Token]
     tokpointer*: int
+    macros*: Table[string, MacroDef]
+
+proc add_macro*(P: var Parser, str: string, M: MacroDef) =
+  P.macros[str] = M
 
 proc parse_next*(P: var Parser): Node
 
@@ -25,15 +29,15 @@ proc is_value(T: Token): bool =
       return false
 
 proc symbol(P: var Parser): Symbol =
-  return Symbol(name: "Symbol", value: peek(P).value)
+  return Symbol(value: peek(P).value)
 
 proc number(P: var Parser): Number =
-  return Number(name: "Number", value: parseFloat(peek(P).value))
+  return Number(value: parseFloat(peek(P).value))
 
 proc str(P: var Parser): String =
-  return String(name: "String", value: peek(P).value)
+  return String(value: peek(P).value)
 
-proc s_expression(P: var Parser): Sexpr =
+proc s_expression(P: var Parser): Node =
   var exprs: seq[Node]
   var exp = parse_next(P)
   while in_range(P):
@@ -43,7 +47,12 @@ proc s_expression(P: var Parser): Sexpr =
     else:
       exp = parse_next(P)
   next(P)
-  return Sexpr(name: "Sexpr", exprs: exprs)
+  if exprs[0] != nil and exprs[0] of Symbol:
+    if P.macros.hasKey(exprs[0].Symbol.value):
+      #echo P.macros[exprs[0].Symbol.value].transformer(exprs)
+      return P.macros[exprs[0].Symbol.value].transformer(exprs)
+    
+  return Sexpr(exprs: exprs)
 
 proc parse_next*(P: var Parser): Node =
   if not in_range(P):
@@ -70,7 +79,7 @@ proc parse_next*(P: var Parser): Node =
     next(P)
     return sym
 
-  return Node(name: "Null")
+  return Node()
 
 proc parse_all*(P: var Parser): seq[Node] =
   var ast: seq[Node]
@@ -84,20 +93,19 @@ proc parse_all*(P: var Parser): seq[Node] =
 
 proc fmt_node*(node: Node): string =
   var str: string
-  case node.name:
-    of "Sexpr":
+  if node of Sexpr:
       str.add "( "
       for node in Sexpr(node).exprs:
         str.add(fmt_node(node))
       str.add ")"
-    of "Symbol":
-      str.add Symbol(node).value
-    of "Number":
-      str.add $Number(node).value
-    of "String":
-      str.add String(node).value
-    else:
-      str.add "!UNKNOWN!"
+  elif node of Symbol:
+    str.add Symbol(node).value
+  elif node of Number:
+    str.add $Number(node).value
+  elif node of String:
+    str.add String(node).value
+  else:
+    str.add "!UNKNOWN!"
   str.add " "
   return str
 

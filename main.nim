@@ -7,6 +7,7 @@ proc load_roto_file(filename: string) =
   let toks = get_next_march(l)
 
   var p = Parser(parseobj: toks, tokpointer: 0)
+  load_stdlib_macros(p)
   let nodes = parse_all(p)
   echo fmt_nodes(nodes)
 

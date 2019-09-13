@@ -32,4 +32,4 @@ proc object_tostring*(O: ObjectType): string =
   elif O of ObjectString:
     return O.ObjectString.value
   elif O of ObjectFunction:
-    return "(Function Pointer)"
+    return "Func Pointer"

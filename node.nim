@@ -16,4 +16,4 @@ type
   Sexpr* = ref object of Node
     exprs*: seq[Node]
 
-proc is_symbol*(n: Node): bool = n.name == "Symbol"
+proc is_symbol*(n: Node): bool = n of Symbol
